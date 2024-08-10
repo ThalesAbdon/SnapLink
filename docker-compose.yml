@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres_snaplink_container
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: urlshortener
+      POSTGRES_USER: your_db_username
+      POSTGRES_PASSWORD: your_db_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

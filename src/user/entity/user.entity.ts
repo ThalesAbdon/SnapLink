@@ -17,4 +17,10 @@ export class User {
 
   @OneToMany(() => Url, (url) => url.user)
   urls: Url[];
+
+  @Column({ type: 'timestamp' })
+  createdAt: Date;
+
+  @Column({ type: 'timestamp' })
+  updatedAt: Date;
 }

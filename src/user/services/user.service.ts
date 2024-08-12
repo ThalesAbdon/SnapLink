@@ -1,37 +1,42 @@
-// src/user/user.service.ts
-
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { User } from '../entity/user.entity';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
+import { UrlRepository } from 'src/url/repository/url.repository';
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(UrlRepository)
+    private readonly urlRepository: UrlRepository,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    const hashedPassword = await bcrypt.hash(
-      createUserDto.password,
-      +process.env.SALTROUNDS,
-    );
-    const user = this.userRepository.create({
-      ...createUserDto,
-      password: hashedPassword,
-    });
-    return this.userRepository.save(user);
-  }
-
-  async findAll(): Promise<User[]> {
-    return this.userRepository.find();
+  async create(createUserDto: CreateUserDto): Promise<Record<string, any>> {
+    try {
+      const hashedPassword = await bcrypt.hash(
+        createUserDto.password,
+        +process.env.SALTROUNDS,
+      );
+      const user = this.userRepository.create({
+        ...createUserDto,
+        password: hashedPassword,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      await this.userRepository.save(user);
+      return { message: 'User created successfully!' };
+    } catch (error) {
+      throw new InternalServerErrorException('Internal Server Error');
+    }
   }
 
   async findOne(id: number): Promise<User> {
@@ -59,13 +64,14 @@ export class UserService {
   }
 
   async findOneByEmail(email: string): Promise<User | undefined> {
-    return this.userRepository.findOneBy({ email });
+    return this.userRepository.findOneBy({ email, deletedAt: IsNull() });
   }
 
   async softDelete(id: number): Promise<void> {
     const result = await this.userRepository.update(id, {
       deletedAt: new Date(),
     });
+    await this.urlRepository.deleteMany(id);
     if (result.affected === 0) {
       throw new NotFoundException('User not found!');
     }

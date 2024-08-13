@@ -48,16 +48,27 @@ export class UserService {
     }
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
+  async update(
+    id: number,
+    updateUserDto: UpdateUserDto,
+  ): Promise<Record<string, any>> {
     try {
+      console.log(id, updateUserDto);
       const user = await this.userRepository.findOneBy({ id });
       if (!user?.id) {
         throw new NotFoundException('User not found!');
       }
+      if (updateUserDto?.password) {
+        const hashedPassword = await bcrypt.hash(
+          updateUserDto.password,
+          +process.env.SALTROUNDS,
+        );
+        updateUserDto.password = hashedPassword;
+      }
       await this.userRepository.update(id, {
         ...updateUserDto,
       });
-      return await this.userRepository.findOneBy({ id });
+      return { message: 'User updated successfully!' };
     } catch (error) {
       throw new BadRequestException('Not field to update!');
     }

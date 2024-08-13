@@ -1,17 +1,15 @@
 import {
   Controller,
   Post,
-  Get,
   Delete,
   Body,
-  Param,
   Patch,
   UseGuards,
   Req,
+  ForbiddenException,
 } from '@nestjs/common';
 import { UserService } from '../services/user.service';
 import { CreateUserDto } from '../dto/create-user.dto';
-import { User } from '../entity/user.entity';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 import { AuthRequest } from 'src/auth/interfaces/auth-request.interface';
@@ -25,24 +23,26 @@ export class UserController {
     return this.userService.create(input);
   }
 
-  @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  async findOne(@Param('id') id: number): Promise<User> {
-    return this.userService.findOne(+id);
-  }
-
-  @Patch(':id')
+  @Patch()
   @UseGuards(JwtAuthGuard)
   async update(
-    @Param('id') id: number,
+    @Req() req: AuthRequest,
     @Body() updateUserDto: UpdateUserDto,
-  ): Promise<User> {
-    return this.userService.update(id, updateUserDto);
+  ): Promise<Record<string, any>> {
+    try {
+      return this.userService.update(req.user.id, updateUserDto);
+    } catch (error) {
+      throw new ForbiddenException('Forbidden resource');
+    }
   }
 
   @Delete()
   @UseGuards(JwtAuthGuard)
   async softDelete(@Req() req: AuthRequest): Promise<void> {
-    return this.userService.softDelete(req.user.id);
+    try {
+      return this.userService.softDelete(req.user.id);
+    } catch (error) {
+      throw new ForbiddenException('Forbidden resource');
+    }
   }
 }

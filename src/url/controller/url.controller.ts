@@ -10,6 +10,8 @@ import {
   HttpStatus,
   Delete,
   Req,
+  Patch,
+  ForbiddenException,
 } from '@nestjs/common';
 import { Url } from '../entity/url.entity';
 import { CreateUrlDto } from '../dto/create-url.dto';
@@ -18,6 +20,7 @@ import { OptionalJwtAuthGuard } from 'src/auth/guard/optional-jwt-auth.guard';
 import { Response } from 'express';
 import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 import { AuthRequest } from 'src/auth/interfaces/auth-request.interface';
+import { UpdateUrlDto } from '../dto/update-url.dto';
 
 @Controller('')
 export class UrlController {
@@ -38,24 +41,45 @@ export class UrlController {
 
   @Get('all-urls')
   @UseGuards(JwtAuthGuard)
-  async getMyUrls(@Request() req): Promise<Url[]> {
-    console.log(req);
-    return await this.urlService.findByUserId(req.user.userId);
+  async getMyUrls(@Request() req: AuthRequest): Promise<Url[]> {
+    try {
+      console.log(req.user.id);
+      return await this.urlService.findByUserId(req.user.id);
+    } catch (error) {
+      throw new ForbiddenException('Forbidden resource');
+    }
   }
 
   @Get(':shortenedUrl')
   async redirect(
     @Param('shortenedUrl') shortenedUrl: string,
     @Res() res: Response,
-  ): Promise<void> {
+  ): Promise<Record<string, any>> {
     const url = await this.urlService.findByShortenedUrl(shortenedUrl);
     if (!url || url.deletedAt) {
-      res.status(HttpStatus.NOT_FOUND).send('URL not found');
-      return;
+      return res.status(HttpStatus.NOT_FOUND).send('URL not found');
     }
     url.clicks++;
-    await this.urlService.update(url.id, url);
+    await this.urlService.updateClick(url.id, url);
     res.redirect(url.originalUrl);
+  }
+
+  @Patch()
+  @UseGuards(JwtAuthGuard)
+  async update(
+    @Req() req: AuthRequest,
+    @Body() updateUrlDto: UpdateUrlDto,
+  ): Promise<Record<string, any>> {
+    try {
+      console.log(req.headers.host);
+      return this.urlService.update(
+        req.user.id,
+        updateUrlDto,
+        req.headers.host,
+      );
+    } catch (error) {
+      throw new ForbiddenException('Forbidden resource');
+    }
   }
 
   @Delete('/:id')

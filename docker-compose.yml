@@ -1,17 +1,62 @@
-version: '3.8'
-
+version: "3.8"
 services:
-  postgres:
-    image: postgres:latest
-    container_name: postgres_snaplink_container
-    ports:
-      - "5433:5432"
+  db:
+    container_name: postgres_container_snaplink
+    image: postgres
+    restart: always
     environment:
-      POSTGRES_DB: urlshortener
-      POSTGRES_USER: your_db_username
-      POSTGRES_PASSWORD: your_db_password
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    networks:
+      - backend_network
+    ports:
+      - "5432:5432"
+  nest-backend:
+    container_name: snap-link
+    image: snap-link
+    build:
+      dockerfile: Dockerfile
+      context: .
+    ports:
+      - 3001:3001
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      SALTROUNDS: ${SALTROUNDS}
+      BASE_URL: ${BASE_URL}
+      PORT: ${PORT}
+    networks:
+      - backend_network
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    restart: unless-stopped
+    depends_on:
+      - db
+    command: >
+      sh -c "npm run migration:run && npm start"
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - backend_network
+    ports:
+      - '80:80'
+    depends_on:
+      - nest-backend
 
 volumes:
-  postgres_data:
+  postgres_data: {}
+
+networks:
+  backend_network:
+    driver: bridge
+
+# docker compose --env-file .env up

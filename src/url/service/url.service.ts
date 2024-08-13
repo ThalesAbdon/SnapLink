@@ -101,7 +101,7 @@ export class UrlService {
       select: ['originalUrl', 'clicks'],
     });
     console.log(urls);
-    if (!urls) {
+    if (!urls || urls.length === 0) {
       throw new NotFoundException('User not found!');
     }
     return urls;

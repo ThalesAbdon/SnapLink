@@ -17,3 +17,5 @@ export class UrlRepository extends Repository<Url> {
       .execute();
   }
 }
+
+export { Url };

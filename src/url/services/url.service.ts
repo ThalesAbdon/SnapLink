@@ -4,6 +4,7 @@ import { IsNull, Repository } from 'typeorm';
 import { nanoid } from 'nanoid';
 import { Url } from '../entity/url.entity';
 import { CreateUrlDto } from '../dto/create-url.dto';
+import { UpdateUrlDto } from '../dto/update-url.dto';
 
 @Injectable()
 export class UrlService {
@@ -25,7 +26,7 @@ export class UrlService {
 
     let shortenedUrl: string;
     let unique = false;
-    const random = Math.floor(Math.random() * 6) + 1;
+    const random = Math.floor(Math.random() * 3) + 4;
     while (!unique) {
       shortenedUrl = nanoid(random);
       const existingShortenedUrl = await this.urlRepository.findOneBy({
@@ -43,35 +44,73 @@ export class UrlService {
       updatedAt: new Date(),
       user: userId ? { id: userId } : null,
     });
-
+    console.log(existingUrl);
     await this.urlRepository.save(newUrl);
-    return { snapLink: `http://${host}${existingUrl.shortenedUrl}` };
+    return { snapLink: `http://${host}/${newUrl.shortenedUrl}` };
   }
 
   async findByShortenedUrl(shortenedUrl: string): Promise<Url> {
     const x = await this.urlRepository.findOneBy({
       shortenedUrl: shortenedUrl,
+      deletedAt: IsNull(),
     });
     return x;
   }
 
-  async update(id: number, updateData: Partial<Url>): Promise<Url> {
+  async updateClick(
+    id: number,
+    updateData: Partial<Url>,
+  ): Promise<Record<string, any>> {
     await this.urlRepository.update(id, updateData);
-    return this.urlRepository.findOneBy({ id });
+    return { message: 'Url updated successfully!' };
   }
 
-  async findByUserId(userId: number): Promise<any> {
+  async update(
+    id: number,
+    updateData: UpdateUrlDto,
+    host: string,
+  ): Promise<Record<string, any>> {
+    const existingUrl = await this.urlRepository.findOneBy({
+      userId: id,
+      originalUrl: updateData.newOriginalUrl,
+    });
+    if (existingUrl) {
+      return { snapLink: `http://${host}/${existingUrl.shortenedUrl}` };
+    }
+    const url = await this.urlRepository.findOneBy({
+      userId: id,
+      originalUrl: updateData.originalUrl,
+      deletedAt: IsNull(),
+    });
+    if (!url?.id) {
+      throw new NotFoundException('Url not found!');
+    }
+    await this.urlRepository.update(
+      { id: url.id },
+      {
+        originalUrl: updateData.newOriginalUrl,
+      },
+    );
+    return { message: 'Url updated successfully!' };
+  }
+
+  async findByUserId(userId: number): Promise<Partial<Url[]>> {
     console.log({ id: userId });
-    const user = await this.urlRepository.findOneBy({ user: { id: userId } });
-    console.log(user);
-    if (!user) {
+    const urls = await this.urlRepository.find({
+      where: { user: { id: userId }, deletedAt: null },
+      select: ['originalUrl', 'clicks'],
+    });
+    console.log(urls);
+    if (!urls) {
       throw new NotFoundException('User not found!');
     }
-    return { originalUrl: user.originalUrl, clicksQuantity: user.clicks };
+    return urls;
   }
 
   async softDelete(userId: number, id: number): Promise<void> {
-    const url = await this.urlRepository.findOne({ where: { id, userId } });
+    const url = await this.urlRepository.findOne({
+      where: { id, userId, deletedAt: IsNull() },
+    });
     if (!url?.id) {
       throw new NotFoundException('Url not found!');
     }

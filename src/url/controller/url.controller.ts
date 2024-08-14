@@ -57,6 +57,7 @@ export class UrlController {
     const url = await this.urlService.create(createUrlDto, req.headers.host);
     return url;
   }
+
   @Get('all-urls')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Lista todas as URLs do usuário autenticado' })
@@ -71,8 +72,7 @@ export class UrlController {
   })
   async getMyUrls(@Request() req: AuthRequest): Promise<Url[]> {
     try {
-      console.log(req.user.id);
-      return await this.urlService.findByUserId(req.user.id);
+      return await this.urlService.listUrls(req.user.id);
     } catch (error) {
       throw new ForbiddenException('Forbidden resource');
     }
@@ -125,7 +125,6 @@ export class UrlController {
     @Body() updateUrlDto: UpdateUrlDto,
   ): Promise<Record<string, any>> {
     try {
-      console.log(req.headers.host);
       return this.urlService.update(
         req.user.id,
         updateUrlDto,
@@ -156,6 +155,7 @@ export class UrlController {
     @Req() req: AuthRequest,
     @Param('id') id: number,
   ): Promise<void> {
+    console.log(req.user.id);
     return this.urlService.softDelete(req.user.id, +id);
   }
 }

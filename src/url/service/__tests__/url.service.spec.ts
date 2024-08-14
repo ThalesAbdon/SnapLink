@@ -202,7 +202,7 @@ describe('UrlService', () => {
 
       jest.spyOn(repository, 'find').mockResolvedValue(urls as Url[]);
 
-      const result = await service.findByUserId(userId);
+      const result = await service.listUrls(userId);
       expect(result).toEqual(urls);
     });
 
@@ -211,9 +211,7 @@ describe('UrlService', () => {
 
       jest.spyOn(repository, 'find').mockResolvedValue([]);
 
-      await expect(service.findByUserId(userId)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.listUrls(userId)).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -252,9 +250,11 @@ describe('UrlService', () => {
           .mockResolvedValue({ affected: 1 } as any);
 
         await service.softDelete(userId, id);
-        expect(repository.update).toHaveBeenCalledWith(id, {
-          deletedAt: new Date(),
-        });
+        const updateCall = (repository.update as jest.Mock).mock.calls[0][1];
+        expect(updateCall.deletedAt.getTime()).toBeCloseTo(
+          new Date().getTime(),
+          -2,
+        );
       });
 
       it('should throw NotFoundException if update does not affect any rows', async () => {

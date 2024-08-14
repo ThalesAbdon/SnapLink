@@ -41,13 +41,13 @@ Este projeto tem como objetivo desenvolver um sistema de encurtamento de URLs, p
 
 Este projeto foi desenvolvido utilizando o NestJS, que segue uma arquitetura modular e organizada. Abaixo, descrevo os principais componentes da arquitetura padrão do NestJS:
 
-###Módulos
+### Módulos
 Os módulos são a base da estrutura do NestJS. Eles ajudam a organizar o código em partes coesas e reutilizáveis. Cada módulo é uma classe decorada com @Module, que pode importar outros módulos, declarar provedores e exportar provedores para outros módulos.
 
-###Controladores
+### Controladores
 Os controladores são responsáveis por lidar com as requisições HTTP e retornar as respostas ao cliente. Eles são decorados com @Controller e contêm manipuladores de rotas, que são métodos decorados com @Get, @Post, @Put, @Delete, entre outros.
 
-###Serviços
+### Serviços
 Os serviços contêm a lógica de negócios e são injetados nos controladores ou em outros serviços. Eles são decorados com @Injectable e podem ser providos por módulos.
 
 ## Instalação e Execução

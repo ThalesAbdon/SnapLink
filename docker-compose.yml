@@ -59,4 +59,4 @@ networks:
   backend_network:
     driver: bridge
 
-# docker compose --env-file .env up
+# sudo docker compose --env-file .env up

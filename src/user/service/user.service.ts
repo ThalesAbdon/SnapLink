@@ -110,6 +110,6 @@ export class UserService {
     if (result.affected === 0) {
       throw new NotFoundException('User not found!');
     }
-    return { message: 'User soft deleted successfully' };
+    return { message: 'User deleted successfully' };
   }
 }

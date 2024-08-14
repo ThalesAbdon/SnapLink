@@ -44,7 +44,6 @@ export class UrlService {
       updatedAt: new Date(),
       user: userId ? { id: userId } : null,
     });
-    console.log(existingUrl);
     await this.urlRepository.save(newUrl);
     return { snapLink: `http://${host}/${newUrl.shortenedUrl}` };
   }
@@ -94,13 +93,11 @@ export class UrlService {
     return { message: 'Url updated successfully!' };
   }
 
-  async findByUserId(userId: number): Promise<Partial<Url[]>> {
-    console.log({ id: userId });
+  async listUrls(userId: number): Promise<Partial<Url[]>> {
     const urls = await this.urlRepository.find({
       where: { user: { id: userId }, deletedAt: null },
-      select: ['originalUrl', 'clicks'],
+      select: ['originalUrl', 'userId', 'clicks'],
     });
-    console.log(urls);
     if (!urls || urls.length === 0) {
       throw new NotFoundException('User not found!');
     }

@@ -155,7 +155,6 @@ export class UrlController {
     @Req() req: AuthRequest,
     @Param('id') id: number,
   ): Promise<void> {
-    console.log(req.user.id);
     return this.urlService.softDelete(req.user.id, +id);
   }
 }
